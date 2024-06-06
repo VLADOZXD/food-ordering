@@ -75,7 +75,7 @@ const ProductDetailsScreen = () => {
 const styles = StyleSheet.create({
   container: { backgroundColor: "white", flex: 1, padding: 10 },
   image: { width: "100%", aspectRatio: 1 },
-  price: { fontWeight: "bold", marginTop: "auto" },
+  price: { fontSize: 18, fontWeight: "bold", marginTop: "auto" },
   sizes: {
     flexDirection: "row",
     justifyContent: "space-around",
