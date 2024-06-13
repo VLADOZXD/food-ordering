@@ -1,10 +1,16 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { View, Text, StyleSheet, TextInput, Image, Alert } from "react-native";
-import { Stack, useLocalSearchParams } from "expo-router";
+import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
 import Button from "@/components/Button";
 import { defaultPizzaImage } from "@/components/ProductListItem";
 import Colors from "@/constants/Colors";
+import {
+  useDeleteProduct,
+  useInsertProduct,
+  useProduct,
+  useUpdateProcuct,
+} from "@/api/products";
 
 const CreateProductScreen = () => {
   const [image, setImage] = useState<string | null>(null);
@@ -12,8 +18,29 @@ const CreateProductScreen = () => {
   const [price, setPrice] = useState("");
   const [errors, setErrors] = useState("");
 
-  const { id } = useLocalSearchParams();
+  const { id: idString } = useLocalSearchParams();
+  const id = idString
+    ? parseFloat(typeof idString === "string" ? idString : idString[0])
+    : NaN;
   const isUpdating = !!id;
+
+  const { mutate: insertProduct, isPending: isInsertPending } =
+    useInsertProduct();
+  const { mutate: updateProduct, isPending: isUpdatePending } =
+    useUpdateProcuct();
+  const { mutate: deleteProduct, isPending: isDeletePending } =
+    useDeleteProduct();
+  const { data: updatingProduct } = useProduct(id);
+
+  const router = useRouter();
+
+  useEffect(() => {
+    if (updatingProduct) {
+      setName(updatingProduct.name);
+      setPrice(updatingProduct.price.toString());
+      setImage(updatingProduct.image);
+    }
+  }, [updatingProduct]);
 
   const resetFields = () => {
     setName("");
@@ -39,7 +66,7 @@ const CreateProductScreen = () => {
 
   const onSubmit = () => {
     if (isUpdating) {
-      onUpdateCreate();
+      onUpdate();
     } else {
       onCreate();
     }
@@ -50,17 +77,40 @@ const CreateProductScreen = () => {
       return;
     }
 
-    console.warn("Creating product", name, price);
-    resetFields();
+    insertProduct(
+      { name, price: parseFloat(price), image },
+      {
+        onSuccess: () => {
+          resetFields();
+          router.back();
+        },
+      }
+    );
   };
 
-  const onUpdateCreate = () => {
+  const onUpdate = () => {
     if (!validateInput()) {
       return;
     }
 
-    console.warn("Updating product", name, price);
-    resetFields();
+    updateProduct(
+      { id, name, price: parseFloat(price), image },
+      {
+        onSuccess: () => {
+          resetFields();
+          router.back();
+        },
+      }
+    );
+  };
+
+  const onDelete = () => {
+    deleteProduct(id, {
+      onSuccess: () => {
+        resetFields();
+        router.replace("/(admin)");
+      },
+    });
   };
 
   const pickImage = async () => {
@@ -74,10 +124,6 @@ const CreateProductScreen = () => {
     if (!result.canceled) {
       setImage(result.assets[0].uri);
     }
-  };
-
-  const onDelete = () => {
-    console.warn("Delete");
   };
 
   const confirmDelete = () => {
@@ -119,10 +165,26 @@ const CreateProductScreen = () => {
       />
 
       <Text style={{ color: "red" }}>{errors}</Text>
-      <Button onPress={onSubmit} text={isUpdating ? "Update" : "Create"} />
+      <Button
+        onPress={onSubmit}
+        disabled={isInsertPending || isUpdatePending}
+        text={
+          isUpdating
+            ? isUpdatePending
+              ? "Updating..."
+              : "Update"
+            : isInsertPending
+            ? "Creating..."
+            : "Create"
+        }
+      />
       {isUpdating && (
-        <Text onPress={confirmDelete} style={styles.textButton}>
-          Delete
+        <Text
+          onPress={confirmDelete}
+          style={styles.textButton}
+          disabled={isDeletePending}
+        >
+          {isDeletePending ? "Deleting..." : "Delete"}
         </Text>
       )}
     </View>
