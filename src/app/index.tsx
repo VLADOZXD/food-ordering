@@ -17,7 +17,6 @@ const index = () => {
   }
 
   if (profile?.group !== "ADMIN") {
-    console.log(profile?.group !== "ADMIN");
     return <Redirect href={"/(user)"} />;
   }
 

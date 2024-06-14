@@ -1,28 +1,40 @@
 import { Stack, useLocalSearchParams } from "expo-router";
-import { View, Text, FlatList, StyleSheet, Pressable } from "react-native";
-import orders from "@assets/data/orders";
+import {
+  View,
+  Text,
+  FlatList,
+  StyleSheet,
+  Pressable,
+  ActivityIndicator,
+} from "react-native";
+import { useOrderDetails } from "@/api/orders";
 import OrderItemListItem from "@/components/OrderItemListItem";
 import OrderListItem from "@/components/OrderListItem";
 import { OrderStatusList } from "@/types";
 import Colors from "@/constants/Colors";
 
 const OrderDetailScreen = () => {
-  const { id } = useLocalSearchParams();
+  const { id: idString } = useLocalSearchParams();
+  const id = idString
+    ? parseFloat(typeof idString === "string" ? idString : idString[0])
+    : NaN;
+  const { data: order, isLoading, error } = useOrderDetails(id);
 
-  const order = orders.find((item) => item.id.toString() === id);
-
-  if (!order) {
-    return <Text>Order not found</Text>;
+  if (isLoading) {
+    return <ActivityIndicator />;
   }
 
+  if (error) {
+    return <Text>Failed to fetch order</Text>;
+  }
   return (
     <View style={styles.container}>
       <Stack.Screen options={{ title: `Order #${order?.id}` }} />
       <FlatList
-        data={order.order_items}
+        data={order?.order_items}
         renderItem={({ item }) => <OrderItemListItem item={item} />}
         contentContainerStyle={{ gap: 10 }}
-        ListHeaderComponent={() => <OrderListItem order={order} />}
+        ListHeaderComponent={() => order && <OrderListItem order={order} />}
         ListFooterComponent={() => (
           <>
             <Text style={{ fontWeight: "bold" }}>Status</Text>
@@ -38,7 +50,7 @@ const OrderDetailScreen = () => {
                     borderRadius: 5,
                     marginVertical: 10,
                     backgroundColor:
-                      order.status === status
+                      order?.status === status
                         ? Colors.light.tint
                         : "transparent",
                   }}
@@ -46,7 +58,7 @@ const OrderDetailScreen = () => {
                   <Text
                     style={{
                       color:
-                        order.status === status ? "white" : Colors.light.tint,
+                        order?.status === status ? "white" : Colors.light.tint,
                     }}
                   >
                     {status}

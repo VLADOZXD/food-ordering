@@ -1,14 +1,21 @@
-import { FlatList } from "react-native";
-import { Stack } from "expo-router";
-import orders from "@assets/data/orders";
+import { ActivityIndicator, FlatList, Text } from "react-native";
+import { useMyOrderList } from "@/api/orders";
 import OrderListItem from "@/components/OrderListItem";
 
-const ORDERS = orders;
-
 const OrdersScreen = () => {
+  const { data: orders, isLoading, error } = useMyOrderList();
+
+  if (isLoading) {
+    return <ActivityIndicator />;
+  }
+
+  if (error) {
+    <Text>Failed to fetch orders</Text>;
+  }
+
   return (
     <FlatList
-      data={ORDERS}
+      data={orders}
       renderItem={({ item }) => <OrderListItem order={item} />}
       contentContainerStyle={{ padding: 10, gap: 10 }}
     />
