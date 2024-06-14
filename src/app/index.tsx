@@ -6,7 +6,7 @@ import { useAuth } from "@/provider/AuthProvider";
 import { supabase } from "@/lib/supabase";
 
 const index = () => {
-  const { session, loading, isAdmin, profile } = useAuth();
+  const { session, loading, isAdmin } = useAuth();
 
   if (loading) {
     return <ActivityIndicator />;
@@ -16,7 +16,7 @@ const index = () => {
     return <Redirect href={"/sign-in"} />;
   }
 
-  if (profile?.group !== "ADMIN") {
+  if (!isAdmin) {
     return <Redirect href={"/(user)"} />;
   }
 
