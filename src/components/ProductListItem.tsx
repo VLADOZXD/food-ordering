@@ -1,4 +1,4 @@
-import { StyleSheet, Text, Image, Pressable } from "react-native";
+import { StyleSheet, Text, Image, Pressable, Dimensions } from "react-native";
 import Colors from "@/constants/Colors";
 import { Link, useSegments } from "expo-router";
 import { Tables } from "@/database.types";
@@ -37,8 +37,7 @@ const styles = StyleSheet.create({
     backgroundColor: "white",
     padding: 10,
     borderRadius: 20,
-    flex: 1,
-    maxWidth: "50%",
+    width: Dimensions.get("window").width / 2 - 15,
   },
   image: { width: "100%", aspectRatio: 1 },
   title: {
