@@ -7,7 +7,7 @@ import {
   Pressable,
   ActivityIndicator,
 } from "react-native";
-import { useOrderDetails } from "@/api/orders";
+import { useOrderDetails, useUpdateOrder } from "@/api/orders";
 import OrderItemListItem from "@/components/OrderItemListItem";
 import OrderListItem from "@/components/OrderListItem";
 import { OrderStatusList } from "@/types";
@@ -18,20 +18,26 @@ const OrderDetailScreen = () => {
   const id = idString
     ? parseFloat(typeof idString === "string" ? idString : idString[0])
     : NaN;
+
   const { data: order, isLoading, error } = useOrderDetails(id);
+  const { mutate: updateOrder, error: updateError } = useUpdateOrder();
+
+  const updateStatus = (status: string) => {
+    updateOrder({ id: id, updatedFields: { status } });
+  };
 
   if (isLoading) {
     return <ActivityIndicator />;
   }
 
-  if (error) {
+  if (error || !order) {
     return <Text>Failed to fetch order</Text>;
   }
   return (
     <View style={styles.container}>
       <Stack.Screen options={{ title: `Order #${order?.id}` }} />
       <FlatList
-        data={order?.order_items}
+        data={order.order_items}
         renderItem={({ item }) => <OrderItemListItem item={item} />}
         contentContainerStyle={{ gap: 10 }}
         ListHeaderComponent={() => order && <OrderListItem order={order} />}
@@ -42,7 +48,7 @@ const OrderDetailScreen = () => {
               {OrderStatusList.map((status) => (
                 <Pressable
                   key={status}
-                  onPress={() => console.warn("Update status")}
+                  onPress={() => updateStatus(status)}
                   style={{
                     borderColor: Colors.light.tint,
                     borderWidth: 1,

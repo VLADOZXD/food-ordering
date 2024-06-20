@@ -1,6 +1,7 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/provider/AuthProvider";
+import { Tables, TablesUpdate } from "@/database.types";
 
 export const useAdminOrderList = ({ archived = false }) => {
   const statuses = archived ? ["Delivered"] : ["New", "Cooking", "Delivering"];
@@ -11,7 +12,8 @@ export const useAdminOrderList = ({ archived = false }) => {
       const { data, error } = await supabase
         .from("orders")
         .select("*")
-        .in("status", statuses);
+        .in("status", statuses)
+        .order("created_at", { ascending: false });
       if (error) {
         throw new Error(error.message);
       }
@@ -32,7 +34,8 @@ export const useMyOrderList = () => {
       const { data, error } = await supabase
         .from("orders")
         .select("*")
-        .eq("user_id", id);
+        .eq("user_id", id)
+        .order("created_at", { ascending: false });
       if (error) {
         throw new Error(error.message);
       }
@@ -47,13 +50,66 @@ export const useOrderDetails = (id: number) => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("orders")
-        .select("*")
+        .select("*, order_items(*, products(*))")
         .eq("id", id)
         .single();
       if (error) {
         throw new Error(error.message);
       }
       return data;
+    },
+  });
+};
+
+export const useInsertOreder = () => {
+  const queryClient = useQueryClient();
+  const { session } = useAuth();
+  const userId = session?.user.id;
+
+  return useMutation({
+    async mutationFn(data: Pick<Tables<"orders">, "total">) {
+      if (userId) {
+        const { error, data: newOrder } = await supabase
+          .from("orders")
+          .insert({ ...data, user_id: userId })
+          .select();
+        if (error) {
+          throw new Error(error.message);
+        }
+        return newOrder[0];
+      } else return null;
+    },
+    async onSuccess() {
+      await queryClient.invalidateQueries({ queryKey: ["orders"] });
+    },
+  });
+};
+
+export const useUpdateOrder = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    async mutationFn({
+      id,
+      updatedFields,
+    }: {
+      id: number;
+      updatedFields: TablesUpdate<"orders">;
+    }) {
+      const { error, data: updatedOrder } = await supabase
+        .from("orders")
+        .update(updatedFields)
+        .eq("id", id)
+        .select()
+        .single();
+      if (error) {
+        throw new Error(error.message);
+      }
+      return updatedOrder;
+    },
+    async onSuccess(_, { id }) {
+      await queryClient.invalidateQueries({ queryKey: ["orders"] });
+      await queryClient.invalidateQueries({ queryKey: ["orders", id] });
     },
   });
 };

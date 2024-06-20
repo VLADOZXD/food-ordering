@@ -9,20 +9,22 @@ import {
 import { useOrderDetails } from "@/api/orders";
 import OrderItemListItem from "@/components/OrderItemListItem";
 import OrderListItem from "@/components/OrderListItem";
+import { useUpdateOrderSubscription } from "@/api/orders/subscription";
 
 const OrderDetailScreen = () => {
   const { id: idString } = useLocalSearchParams();
   const id = idString
     ? parseFloat(typeof idString === "string" ? idString : idString[0])
     : NaN;
-  console.log(idString);
+
   const { data: order, isLoading, error } = useOrderDetails(id);
+  useUpdateOrderSubscription(id);
 
   if (isLoading) {
     return <ActivityIndicator />;
   }
 
-  if (error) {
+  if (error || !order) {
     return <Text>Failed to fetch order</Text>;
   }
 
@@ -30,7 +32,7 @@ const OrderDetailScreen = () => {
     <View style={styles.container}>
       <Stack.Screen options={{ title: `Order #${order?.id}` }} />
       <FlatList
-        data={order?.order_items}
+        data={order.order_items}
         renderItem={({ item }) => <OrderItemListItem item={item} />}
         contentContainerStyle={{ gap: 10 }}
         ListHeaderComponent={() => order && <OrderListItem order={order} />}

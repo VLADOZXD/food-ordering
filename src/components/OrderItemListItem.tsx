@@ -1,25 +1,25 @@
 import { View, Text, Image, StyleSheet } from "react-native";
-import { OrderItem } from "@/types";
 import { defaultPizzaImage } from "./ProductListItem";
 import Colors from "@/constants/Colors";
+import { Tables } from "@/database.types";
 
 type OrderItemListItemProps = {
-  item: OrderItem;
+  item: { products: Tables<"products"> | null } & Tables<"order_items">;
 };
 
 const OrderItemListItem = ({ item }: OrderItemListItemProps) => {
   return (
     <View style={styles.container}>
       <Image
-        source={{ uri: item.products.image || defaultPizzaImage }}
+        source={{ uri: item.products?.image || defaultPizzaImage }}
         style={styles.image}
       />
       <View style={{ flex: 1 }}>
         <Text numberOfLines={1} style={styles.title}>
-          {item.products.name}
+          {item.products?.name}
         </Text>
         <View style={styles.subtitleContainer}>
-          <Text style={styles.price}>${item.products.price}</Text>
+          <Text style={styles.price}>${item.products?.price}</Text>
           <Text style={styles.size}>Size: {item.size}</Text>
         </View>
       </View>
